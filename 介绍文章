@@ -1,0 +1,222 @@
+http://marciavillalba.com/foobar/2015/10/06/create-memory-game-with-javascript/
+
+CREATE MEMORY GAME WITH JAVASCRIPT
+Posted on October 6, 2015 by Marcia
+In this post we will build a game using Javascript. The idea came to my mind because we are organizing a Halloween Game Hackathon at Startup Sauna (Espoo) on the 30th of October to the 1st of November with other women. The plan is to gather around 30-40 participants, set them in small groups and let them create a game using Javascript. In this Hackatlon all the participants will be women and they don’t need to know anything of programming. So on a Sunday afternoon I was thinking what kind of games this girls can build, would it be so hard for a person that never programmed to make a game in a weekend? So I started coding and a couple of hours later my game was out.
+
+If you want to register to the Halloween Game Hackathon please click here. Also you can register there if you would love to be a volunteer for this event.
+
+This is a tutorial on how to build a memory game using Javascript. The idea of the game if you don’t know it, is try to match two cards that are the same. And if they don’t match you move on to flip other cards and remember their position. The game ends when the whole board is uncovered. Is a very simple game.
+
+The process where I thought about this game started with the core of the game, what are the main parts of it. We need a board and then also we need cards and most of the action happens when a card is flipped. So I created two functions initially, one that created a different board every time and the other function when the card was flipped.
+
+You can follow these steps and create your own memory game.
+
+1. Create a project folder and a file inside called index.html
+2. Add the basic HTML to that file.
+
+<!DOCTYPE html>
+<html>
+<head>
+ <link href="style.css" rel="stylesheet" type="text/css"></link>
+ <script src="lodash.min.js"></script>
+ <script src="actions.js"></script>
+</head>
+<body>
+</body>
+</html>
+Then create empty files in that project with the name: style.css and actions.js.
+
+Also add as a script the lodash library, that will help us to build the actions.js. If you don’t know the lodash library you should go and check it out, it is a great library when writing Javascript, as it reduces the pain of writing some methods that don’t exist in Javascript. Click the download button in the lodash site and copy that file to your game project.
+
+3. In the index.html in the body add a div
+
+<div id="memory_board"></div>
+
+And in the style.css add the corresponding style.
+
+div#memory_board {
+ background:#DADADA;
+ border:#999 1px solid;
+ width: 800px;
+ height: 540px;
+ padding: 24px;
+ margin: 0px auto;
+}
+Then open the index.html in a browser and see what it looks like.
+
+4. Inside the memory board we will place a lot of divs, that will be the cards. They will be placed dynamically using Javascript. But before that, we need to add one more style to the style.css to represent the back of the card.
+
+div#memory_board > div {
+ background: #FF3399;
+ border: #000 1px solid;
+ width: 71px;
+ height: 71px;
+ float: left;
+ margin: 10px;
+ padding: 20px;
+ font-size: 64px;
+ cursor: pointer;
+ text-align: center;
+}
+5. Then we open the actions.js and we will start by creating some variables.
+
+var memory_array = ['A','A','B','B','C','C','D','D','E','E','F','F','G','G','H','H','I','I','J','J','K','K','L','L'];
+ var memory_values = [];
+ var memory_tile_ids = [];
+ var tiles_flipped = 0;
+The variable memory_array is the collection of the content of the cards, this array will be used to create the cards dynamically. In this case it will be pairs of letters. But we can change that to anything we want.
+
+The next variables will be populated during the game play script, we will come back to their usage later in the tutorial
+
+6. The next step is to create the newBoard() method. This method will be executed everytime the game starts. This function will generate all the cards in the board as little divs.
+
+function newBoard() {
+ tiles_flipped = 0;
+ memory_array = _.shuffle(memory_array); 
+ var output = '';
+ _.forEach(memory_array, function(memory_array_value, index) {
+ output += '<div id="tile_'+ index +'" onclick="memoryFlipTile(this,\''+ memory_array_value +'\')"></div>';
+ }); 
+ document.getElementById('memory_board').innerHTML = output;
+}
+This function first will set the tiles_flipped variable to zero as we are starting a new game. Then it will shuffle the memory_array as we want to have the cards in different position in every game. For shuffling we will use the _.shuffle function that lodash provides, so we don’t need to build our own. It makes the code much cleaner and easy to mantain.
+
+Then we will create a new variable called output that is were we will be adding our just created divs. And we will populate that output variable iterating over all the values in the memory_array. For iterating over all the values we will use the _.forEach function in lodash. In every iteration a new div will be created and add it to the output variable. The div will contain the index of the memory_array value and action to execute when the card is clicked.
+
+At the end we just assigned the output variable (that contains all the card divs) to innerHTML of the memory_board.
+
+After adding that function we can add the call to the index.html after creating the memory_board div.
+
+<body>
+ <div id="memory_board"></div>
+ <script>newBoard();</script>
+ </body>
+Now every time the pages loads the newBoard() function will be called. We can open index.html in the browser and we can see that the board is full of cards now.
+
+7. So when we click in a card memoryFlipTile() function will execute. This function takes as a parameter the div where the function is called from and the value of the memory_array array in the position of that card.
+
+To build the memoryFlipTile function, we need to think of the different stages of the game. So we can start by creating the function thinking about what will happen in each case. For this stage we just write the logic of the game in an structured form. The end result is following and it is written valid Javascript but it is also quite clear to read in English.
+
+function memoryFlipTile(tile, value) {
+ if (canFlipCard(tile)) {
+   flipCard(tile, value);
+   if (areNoCardsFlipped()) {
+     setCardAsFlipped(tile, value);
+   } else if(isOneCardFlipped()) {
+     setCardAsFlipped(tile, value);
+       if(isThereIsAMatch()) {
+         matchCards();
+         if (isGameOver()) {
+           gameIsOver();
+         }
+       } else {
+         cardsDoNotMatch();
+       }
+     }
+   }
+ }
+After we have created the logic for our game, we need to start populating those functions. And those will be really simple functions, as we already have cracked the problem into so small parts.
+
+8. canFlipCard(tile)
+
+So everything starts with the tile (the card div) and its content (the letter value of the card in this case). The code will only execute if this statement is true.
+
+if(tile.innerHTML ==""&& memory_values.length < 2)
+
+This means that there is nothing inside the div and that the amount of memory cards turned is less than two (so this will only execute when there is no card selected or when there is one card selected).
+
+function canFlipCard(tile) {
+ return tile.innerHTML == "" && memory_values.length < 2;
+}
+9. flipCard(tile, value);
+
+The card can be flipped, so let’s flip the card, and that means changing the style of the card so it looks that it was flipped, we set the background color to white and the innerHTML to the letter value. So when we click the card we see the letter value on a white background.
+
+function flipCard(tile, value) {
+ tile.style.background = '#FFF';
+ tile.innerHTML = value;
+}
+10. areNoCardsFlipped() and isOneCardFlipped()
+
+We check that there are no cards already flipped or that there is only one card flipped, just by checking the length of the memory_values, as there is were will be storing the flipped cards.
+
+function areNoCardsFlipped() {
+ return memory_values.length == 0;
+}
+function isOneCardFlipped() {
+ return memory_values.length == 1
+}
+11. setCardAsFlipped(tile, value);
+To set the card as flipped we just need to save them in the memory_values. Also for practical reasons we will stored the identificator of the tile in the memory_tile_ids.
+
+if(memory_values.length == 0){
+ memory_values.push(val);
+ memory_tile_ids.push(tile.id);
+12. isThereIsAMatch()
+
+Just check if the values of the two cards are the same.
+
+function isThereIsAMatch() {
+ return memory_values[0] == memory_values[1];
+}
+13. matchCards();
+
+If the cards match then we can add 2 to the tiles_flipped variable. This variable will be counting all the tiles that were flipped so we know when the game is over. And we clear both arrays memory_values and memory_tile_ids as now those cards are a match.
+
+function matchCards() {
+ tiles_flipped += 2;
+ memory_values = [];
+ memory_tile_ids = [];
+}
+14. isGameOver()
+
+If the amount on the tiles_flipped is the same as the length of the memory_array then we just completed the game and the board is cleared.
+
+function isGameOver() {
+ return tiles_flipped == memory_array.length;
+}
+15. gameIsOver()
+
+When the game is over we send a message to the user telling that the game is completed, clean the memory_board HTML element and start a newBoard().
+
+function gameIsOver() {
+ alert("Board cleared... generating new board");
+ document.getElementById('memory_board').innerHTML = "";
+ newBoard();
+}
+16. cardsDoNotMatch();
+
+If the two cards are not the same then after some time the cards will be flip back again.  To achieve this we use a timeout set to 700 milliseconds, before turning the card back.
+
+function cardsDoNotMatch() {
+ setTimeout(flipCardBack, 700);
+}
+For turning the card back we create the function flipCardBack(). That will set the styles of each of the flipped tiles back to its original color and set the value to empty. At the end it will clear the memory_values and memory_tiles_ids.
+
+function flipCardBack() {
+ var tile_1 = document.getElementById(memory_tile_ids[0]);
+ var tile_2 = document.getElementById(memory_tile_ids[1]);
+ tile_1.style.background = '#FF3399';
+ tile_1.innerHTML = "";
+ tile_2.style.background = '#FF3399';
+ tile_2.innerHTML = "";
+ memory_values = [];
+ memory_tile_ids = [];
+}
+17. Now the game is completed and you can try it in your browser.
+
+Screen Shot 2015-10-04 at 14.11.57
+
+This is a easy way to solve any problem when coding, first think of the code as a process and decompose it, write it in english. Then you can translate that pseudocode into the desired programming language and create the small functions when they are needed. But don’t start by trying to solve the problem in the programming language, it will add excessive complication to your thinking.
+
+I hope you enjoy it.
+
+You can get the code from GitHub
+
+And you can check a working version of the code here
+
+Posted in tutorial
+POST NAVIGATION
+← How computers talk to each other?What an year of women in tech! →
+One thought on “Create memory game with Javascript”
